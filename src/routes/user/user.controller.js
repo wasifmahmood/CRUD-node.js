@@ -3,10 +3,11 @@ const authHandler = require("../../middleware/auth");
 const errorHandler = require("../../middleware/error");
 const User = require("../../models/user");
 const { generateAuthToken } = require("../../utils/helpers");
+const { FormateUserObj } = require("./UserFormatter");
 const createUserSchema = require("./validationSchema");
 const jwt_decode = require("jwt-decode");
-
 const router = express.Router();
+require("dotenv").config();
 
 // create the get route
 router.get(
@@ -37,7 +38,12 @@ router.get(
   "/:userId",
   errorHandler(async (req, res) => {
     const user = await User.findOne({ _id: req.params.userId });
-    res.status(200).send(user);
+    const UserObj = FormateUserObj(user);
+    res.status(200).send({
+      status: true,
+      message: "user found successfully",
+      data: UserObj,
+    });
   })
 );
 
