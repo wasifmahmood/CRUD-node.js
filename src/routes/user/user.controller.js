@@ -9,12 +9,12 @@ const jwt_decode = require("jwt-decode");
 const router = express.Router();
 require("dotenv").config();
 
-// create the get route
+//create the logout route
 router.get(
   "/logout",
   authHandler,
   errorHandler(async (req, res) => {
-    console.log(req.params)
+    console.log(req.params);
     const user = await User.findOne({ token: req.headers.token });
     await User.findOneAndUpdate({ _id: user._id }, { token: "" });
     res.status(200).send({
@@ -24,16 +24,27 @@ router.get(
   })
 );
 
+// create the get route
 router.get(
   "/",
   errorHandler(async (req, res) => {
-    const users = await User.find();
-    res.status(200).send(users);
+    if (req.headers.limit !== undefined) {
+      const limit = req.headers.limit;
+      const skip = req.headers.skip;
+      const users = await User.find()
+        .limit(limit)
+        .skip(skip)
+        .sort({username: 1 });
+        
+      res.status(200).send(users);
+    } else {
+      const users = await User.find();
+      res.status(200).send(users);
+    }
   })
 );
 
 // create the get route by id
-
 router.get(
   "/:userId",
   errorHandler(async (req, res) => {
@@ -48,7 +59,6 @@ router.get(
 );
 
 //create the POST route
-
 router.post("/", async (req, res) => {
   const payload = req.body;
   const { error } = createUserSchema(payload);
@@ -62,7 +72,6 @@ router.post("/", async (req, res) => {
 });
 
 //create the update route
-
 router.put("/:userId", async (req, res) => {
   const updatedUser = await User.findByIdAndUpdate(
     req.params.userId,
@@ -85,7 +94,6 @@ router.put("/:userId", async (req, res) => {
 });
 
 //delete the route
-
 router.delete("/:userId", async (req, res) => {
   const id = req.params.userId;
   await User.findByIdAndRemove(id).exec();
@@ -93,7 +101,6 @@ router.delete("/:userId", async (req, res) => {
 });
 
 // create a login route
-
 router.post("/login", authHandler, async (req, res) => {
   const user = await User.findOne({ email: req.body.email });
 
@@ -108,30 +115,23 @@ router.post("/login", authHandler, async (req, res) => {
   const token = generateAuthToken({
     username: user.username,
     email: user.email,
-    // id: user._id,
+    id: user._id,
   });
-  user.token=token
+  user.token = token;
   await User.findOneAndUpdate({ _id: user._id }, { token: token });
   res.status(200).send({ message: "Update Hogya Hai", token, user });
 });
 
 // create the  signup route
-
 router.post("/signup", authHandler, async (req, res) => {
   const payload = req.body;
-
   const { error } = User(payload);
-
   if (error) {
     return res.status(400).send({ message: error.details[0].message });
   }
-
   let user = new User(payload);
   user = await user.save();
   res.status(200).send({ user });
 });
-
-//create the logout route
-
 
 module.exports = router;

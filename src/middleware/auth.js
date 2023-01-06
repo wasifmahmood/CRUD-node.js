@@ -1,4 +1,5 @@
 const User = require("../models/user");
+const Teacher = require("../models/teacher");
 const { verifyAuthToken } = require("../utils/helpers");
 
 const authHandler = async(req, res, next) => {
