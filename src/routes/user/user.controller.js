@@ -7,6 +7,7 @@ const { FormateUserObj } = require("./UserFormatter");
 const createUserSchema = require("./validationSchema");
 const jwt_decode = require("jwt-decode");
 const router = express.Router();
+const {sendVerificationEmail} = require("../user/email");
 require("dotenv").config();
 
 //create the logout route
@@ -37,8 +38,9 @@ router.get(
         .sort({username: 1 });
         
       res.status(200).send(users);
-    } else {
-      const users = await User.find();
+    } else 
+    {
+      const users = await User.find().sort({username: 1 });
       res.status(200).send(users);
     }
   })
@@ -123,15 +125,31 @@ router.post("/login", authHandler, async (req, res) => {
 });
 
 // create the  signup route
-router.post("/signup", authHandler, async (req, res) => {
+router.post("/signup", async (req, res) => {
   const payload = req.body;
-  const { error } = User(payload);
+  const { error } = createUserSchema(payload);
   if (error) {
     return res.status(400).send({ message: error.details[0].message });
   }
   let user = new User(payload);
+  const token = generateAuthToken({
+    username: user.username,
+    email: user.email
+  });
+  // payload.token = token
   user = await user.save();
-  res.status(200).send({ user });
+  await User.findByIdAndUpdate({ _id: user._id}, {token : token})
+  const UserObj = FormateUserObj(user);
+  //to send verification code
+  sendVerificationEmail(payload.email, token)
+  res
+    .status(200)
+    .send({ status: true, message: "Signup successfully!", UserObj, token});
+
 });
+
+
+
+
 
 module.exports = router;
