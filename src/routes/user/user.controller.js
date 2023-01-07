@@ -24,6 +24,22 @@ router.get(
     });
   })
 );
+//verification of email
+router.get(
+  "/verifyUser", 
+  errorHandler(async (req, res) => {
+    const user = await User.findOne({ token: req.query.token });
+    await User.findByIdAndUpdate({ _id: user._id}, {token : ""})
+   
+    res.status(200).send({
+      status: true,
+      message: "VERIFICATION COMPLETED",
+    
+    });
+  })
+);
+
+
 
 // create the get route
 router.get(
@@ -147,6 +163,9 @@ router.post("/signup", async (req, res) => {
     .send({ status: true, message: "Signup successfully!", UserObj, token});
 
 });
+
+
+
 
 
 
